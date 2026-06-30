@@ -3,144 +3,463 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bill Entry</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.14/jspdf.plugin.autotable.min.js"></script>
-
+    <title>Ditto's Store — Bill Entry</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --paper:        #EDE4D3;
+            --paper-deep:   #E4D8BF;
+            --paper-edge:   #D9CBAC;
+            --ink:          #1F1B16;
+            --ink-soft:     #5A5142;
+            --rule:         #B7AB8E;
+            --rule-soft:    #CFC3A6;
+            --red:          #A63A2E;
+            --red-deep:     #8A2E24;
+            --green:        #3F5A3A;
+        }
+        * { box-sizing: border-box; }
+        html { -webkit-text-size-adjust: 100%; }
         body {
-            background-color: #f8f9fa;
-            padding: 20px;
+            margin: 0;
+            padding: 32px 16px 64px;
+            font-family: 'Inter', system-ui, sans-serif;
+            color: var(--ink);
+            background-color: #cfc2a4;
+            background-image:
+                radial-gradient(circle at 20% 15%, rgba(255,255,255,0.18), transparent 45%),
+                radial-gradient(circle at 80% 85%, rgba(0,0,0,0.10), transparent 55%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
         }
-        .container {
-            max-width: 800px;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        .pad {
+            width: 100%;
+            max-width: 720px;
+            background: var(--paper);
+            background-image:
+                radial-gradient(circle at 30% 20%, rgba(0,0,0,0.025), transparent 40%),
+                radial-gradient(circle at 70% 80%, rgba(120,90,40,0.05), transparent 45%);
+            border: 1px solid var(--paper-edge);
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.5) inset,
+                0 18px 40px rgba(40,30,15,0.30),
+                0 4px 10px rgba(40,30,15,0.20);
+            position: relative;
         }
-        h2 {
-            text-align: center;
-            color: #007bff;
-            margin-bottom: 20px;
+        .pad::before {
+            content: "";
+            position: absolute;
+            top: 10px; bottom: 10px; left: 12px;
+            width: 1px;
+            background: repeating-linear-gradient(to bottom, var(--rule) 0 4px, transparent 4px 9px);
+            opacity: 0.55;
         }
-        .table th, .table td {
-            text-align: center;
+        .pad-inner { padding: 30px 34px 36px 44px; }
+        .masthead { border-bottom: 3px double var(--ink); padding-bottom: 16px; }
+        .masthead-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+        .remember {
+            font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 11px;
+            letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink); margin: 0 0 2px;
         }
+        .wordmark {
+            font-family: 'Anton', 'Oswald', sans-serif; font-weight: 400; color: var(--red);
+            font-size: clamp(40px, 9vw, 68px); line-height: 0.82; letter-spacing: 0.01em;
+            margin: 2px 0 0; text-shadow: 1px 1px 0 rgba(0,0,0,0.12);
+        }
+        .service {
+            font-family: 'Oswald', sans-serif; font-weight: 600; letter-spacing: 0.22em;
+            text-transform: uppercase; font-size: 13px; margin: 6px 0 0;
+        }
+        .phone {
+            font-family: 'Oswald', sans-serif; font-weight: 500; letter-spacing: 0.12em;
+            text-transform: uppercase; font-size: 11px; color: var(--ink-soft); margin: 2px 0 0;
+        }
+        .figure { flex: 0 0 auto; }
+        .figure svg { display: block; height: 78px; width: auto; }
+        .store-block { text-align: center; margin-top: 14px; }
+        .store-name {
+            font-family: 'Anton', 'Oswald', sans-serif; font-size: clamp(30px, 6vw, 46px);
+            letter-spacing: 0.02em; line-height: 1; margin: 0;
+        }
+        .tagline {
+            font-family: 'Oswald', sans-serif; font-style: italic; font-weight: 500;
+            font-size: 16px; letter-spacing: 0.08em; margin: 4px 0 0; color: var(--ink-soft);
+        }
+        .address-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-top: 16px; }
+        .address {
+            font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 13px;
+            letter-spacing: 0.06em; line-height: 1.3; text-transform: uppercase;
+        }
+        .dateline {
+            font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 13px; letter-spacing: 0.06em;
+            color: var(--ink-soft); white-space: nowrap; border-bottom: 1.5px solid var(--ink);
+            padding: 0 6px 2px; text-transform: uppercase;
+        }
+        .meta-lines { margin: 18px 0 8px; }
+        .meta-line {
+            display: flex; align-items: baseline; gap: 10px;
+            border-bottom: 1.5px solid var(--rule); padding: 7px 2px 5px;
+        }
+        .meta-key {
+            font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 14px;
+            text-transform: uppercase; letter-spacing: 0.08em; min-width: 38px;
+        }
+        .meta-line input {
+            flex: 1; border: none; background: transparent; font-family: 'Inter', sans-serif;
+            font-size: 15px; color: var(--ink); padding: 0;
+        }
+        .meta-line input:focus { outline: none; }
+        .ledger-head {
+            display: flex; align-items: flex-end; justify-content: space-between;
+            margin: 22px 0 0; border-bottom: 2px solid var(--ink); padding-bottom: 6px;
+        }
+        .ledger-title {
+            font-family: 'Oswald', sans-serif; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.16em; font-size: 14px; margin: 0;
+        }
+        .account-fwd {
+            font-family: 'Oswald', sans-serif; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.1em; font-size: 10px; line-height: 1.1; text-align: center;
+            color: var(--ink-soft); border-left: 1.5px solid var(--rule);
+            border-right: 1.5px solid var(--rule); padding: 2px 10px;
+        }
+        .grid-cols {
+            display: grid; grid-template-columns: 28px 1fr 88px 88px 88px 96px 40px;
+            gap: 8px; align-items: center; padding: 8px 4px; border-bottom: 1.5px solid var(--rule);
+        }
+        .grid-cols .col-label {
+            font-family: 'Oswald', sans-serif; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.07em; font-size: 10.5px; color: var(--ink-soft);
+        }
+        .col-num   { text-align: center; }
+        .col-money { text-align: right; }
+        #items .item-row {
+            display: grid; grid-template-columns: 28px 1fr 88px 88px 88px 96px 40px;
+            gap: 8px; align-items: center; border-bottom: 1px solid var(--rule-soft);
+            padding: 4px; position: relative;
+        }
+        #items .item-row:nth-child(odd) { background: rgba(120,90,40,0.035); }
+        .row-no {
+            font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 13px;
+            text-align: center; color: var(--ink-soft);
+        }
+        .cell-input {
+            width: 100%; border: none; background: transparent; border-bottom: 1px solid transparent;
+            font-family: 'Inter', sans-serif; font-size: 14px; color: var(--ink); padding: 7px 6px;
+            transition: border-color .15s ease, background .15s ease;
+        }
+        .cell-input::placeholder { color: #a99e83; font-style: italic; }
+        .cell-input:focus { outline: none; border-bottom-color: var(--red); background: rgba(166,58,46,0.05); }
+        .cell-input.num   { text-align: center; }
+        .cell-input.money { text-align: right; }
+        .remove-item {
+            width: 28px; height: 28px; border: 1px solid var(--rule); background: transparent;
+            border-radius: 50%; color: var(--red-deep); font-family: 'Oswald', sans-serif;
+            font-size: 16px; line-height: 1; cursor: pointer; display: inline-flex;
+            align-items: center; justify-content: center;
+            transition: background .15s ease, border-color .15s ease, transform .1s ease;
+        }
+        .remove-item:hover { background: var(--red); color: var(--paper); border-color: var(--red); }
+        .remove-item:active { transform: scale(0.9); }
+        .remove-item:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+        .live-total {
+            display: flex; justify-content: flex-end; align-items: baseline; gap: 14px;
+            margin-top: 8px; padding: 10px 4px; border-top: 2px solid var(--ink);
+        }
+        .live-total .lbl {
+            font-family: 'Oswald', sans-serif; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.12em; font-size: 13px;
+        }
+        .live-total .amt {
+            font-family: 'Anton', sans-serif; font-size: 26px; color: var(--red);
+            min-width: 120px; text-align: right;
+        }
+        .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+        .stamp {
+            font-family: 'Oswald', sans-serif; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.1em; font-size: 13px; padding: 11px 20px; border: 2px solid var(--ink);
+            background: transparent; color: var(--ink); cursor: pointer;
+            transition: background .15s ease, color .15s ease, transform .08s ease;
+        }
+        .stamp:hover { background: var(--ink); color: var(--paper); }
+        .stamp:active { transform: translateY(1px); }
+        .stamp:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+        .stamp.add { border-style: dashed; }
+        .stamp.primary {
+            background: var(--red); border-color: var(--red); color: var(--paper); margin-left: auto;
+        }
+        .stamp.primary:hover { background: var(--red-deep); border-color: var(--red-deep); }
+        .receipt { margin-top: 34px; border-top: 3px double var(--ink); padding-top: 22px; }
+        .receipt-stamp {
+            display: inline-block; font-family: 'Oswald', sans-serif; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.18em; font-size: 13px; color: var(--red);
+            border: 2px solid var(--red); border-radius: 3px; padding: 5px 14px;
+            transform: rotate(-2.5deg); box-shadow: 0 0 0 1px rgba(166,58,46,0.25) inset;
+        }
+        .receipt-meta {
+            display: flex; flex-wrap: wrap; gap: 8px 28px; margin: 16px 0 18px;
+            font-family: 'Oswald', sans-serif; font-size: 13px; letter-spacing: 0.05em;
+            text-transform: uppercase; color: var(--ink-soft);
+        }
+        .receipt-meta b { color: var(--ink); font-weight: 600; }
+        table.bill { width: 100%; border-collapse: collapse; font-size: 14px; }
+        table.bill thead th {
+            font-family: 'Oswald', sans-serif; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.07em; font-size: 11px; color: var(--ink-soft); text-align: left;
+            padding: 8px 8px; border-bottom: 2px solid var(--ink);
+        }
+        table.bill thead th.r { text-align: right; }
+        table.bill thead th.c { text-align: center; }
+        table.bill tbody td { padding: 9px 8px; border-bottom: 1px solid var(--rule-soft); }
+        table.bill tbody td.r { text-align: right; font-variant-numeric: tabular-nums; }
+        table.bill tbody td.c { text-align: center; font-variant-numeric: tabular-nums; }
+        table.bill tbody tr:nth-child(odd) td { background: rgba(120,90,40,0.035); }
+        table.bill tr.total-row td {
+            border-top: 2px solid var(--ink); border-bottom: none; padding-top: 12px;
+            font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.08em;
+        }
+        table.bill tr.total-row td.label { text-align: right; font-weight: 600; }
+        table.bill tr.total-row td.value {
+            text-align: right; font-family: 'Anton', sans-serif; font-size: 22px; color: var(--red);
+        }
+        .receipt-actions { margin-top: 20px; }
+        .footnote {
+            text-align: center; margin-top: 26px; font-family: 'Oswald', sans-serif; font-size: 11px;
+            letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-soft);
+        }
+        @media (max-width: 600px) {
+            .pad-inner { padding: 22px 16px 26px 26px; }
+            .figure { display: none; }
+            .masthead-top { justify-content: center; text-align: center; }
+            .wordmark { font-size: 48px; }
+            .grid-cols { display: none; }
+            #items .item-row {
+                grid-template-columns: 22px 1fr 40px;
+                grid-template-areas: "no name remove" "no fields fields";
+                row-gap: 2px; padding: 10px 4px;
+            }
+            #items .item-row .row-no   { grid-area: no; align-self: start; padding-top: 9px; }
+            #items .item-row .c-name   { grid-area: name; }
+            #items .item-row .remove-item { grid-area: remove; }
+            #items .item-row .c-fields {
+                grid-area: fields; display: grid;
+                grid-template-columns: repeat(3, 1fr) 1.1fr; gap: 4px;
+            }
+            .cell-input { padding: 9px 6px; }
+            .stamp.primary { margin-left: 0; width: 100%; text-align: center; }
+            .actions .stamp { flex: 1 1 auto; text-align: center; }
+        }
+        @media (min-width: 601px) {
+            #items .item-row .c-fields { display: contents; }
+        }
+        @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Enter Bill Details</h2>
-        <form action="/" method="POST">
-            <h4 class="mb-3">Enter Items</h4>
-            <div id="items">
-                <div class="row mb-3">
-                    <div class="col-md-3">
-                        <input type="text" class="form-control" name="item_name[]" placeholder="Item Name" required>
-                    </div>
-                    <div class="col-md-2">
-                        <input type="number" class="form-control" name="mrp[]" step="0.01" placeholder="MRP" required>
-                    </div>
-                    <div class="col-md-2">
-                        <input type="number" class="form-control" name="quantity[]" step="0.01" placeholder="Quantity" required>
-                    </div>
-                    <div class="col-md-2">
-                        <input type="number" class="form-control" name="price[]" step="0.01" placeholder="Price" required>
-                    </div>
-                    <div class="col-md-3">
-                        <button type="button" class="btn btn-danger remove-item">Remove</button>
-                    </div>
+    <main class="pad">
+      <div class="pad-inner">
+        <header class="masthead">
+            <div class="masthead-top">
+                <div class="figure" aria-hidden="true">
+                    <svg viewBox="0 0 70 90" fill="none" stroke="#1F1B16" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="35" cy="16" r="11" fill="#EDE4D3"/>
+                        <path d="M24 14c2-5 9-8 14-5"/>
+                        <circle cx="31" cy="16" r="1.6" fill="#1F1B16" stroke="none"/>
+                        <circle cx="40" cy="16" r="1.6" fill="#1F1B16" stroke="none"/>
+                        <path d="M31 21c2 2 6 2 8 0"/>
+                        <path d="M22 40c0-9 6-14 13-14s13 5 13 14v18H22z" fill="#EDE4D3"/>
+                        <path d="M35 26v32"/>
+                        <path d="M22 44l-7 6 4 14M48 44l7 6-4 14"/>
+                        <path d="M27 58v22M43 58v22"/>
+                        <rect x="49" y="30" width="14" height="11" rx="1.5" fill="#EDE4D3"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="remember">Remember &mdash; &ldquo;Trade at your independent store&rdquo;</p>
+                    <h1 class="wordmark">GROCERIES</h1>
+                    <p class="service">Dependable Service</p>
+                    <p class="phone">Phone 1588 J</p>
+                </div>
+                <div class="figure" aria-hidden="true">
+                    <svg viewBox="0 0 70 90" fill="none" stroke="#1F1B16" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="34" cy="15" r="10" fill="#EDE4D3"/>
+                        <path d="M24 13c1-5 7-8 12-6 4 1 6 4 6 4"/>
+                        <circle cx="31" cy="15" r="1.5" fill="#1F1B16" stroke="none"/>
+                        <circle cx="38" cy="15" r="1.5" fill="#1F1B16" stroke="none"/>
+                        <path d="M30 19c2 1.5 5 1.5 7 0"/>
+                        <path d="M26 38c0-7 5-12 11-12s11 5 11 12v8H26z" fill="#EDE4D3"/>
+                        <path d="M26 42l-9 4M48 42l6 8"/>
+                        <rect x="12" y="44" width="20" height="15" rx="1.5" fill="#EDE4D3"/>
+                        <path d="M22 44v15M12 51h20"/>
+                        <path d="M33 50v18M44 50v18"/>
+                        <path d="M33 68l-6 16M44 68l5 16"/>
+                    </svg>
                 </div>
             </div>
-            <button type="button" class="btn btn-primary" onclick="addItem()">Add More Items</button>
-            <br><br>
-            <button type="submit" class="btn btn-success">Generate Bill</button>
+            <div class="store-block">
+                <h2 class="store-name">DITTO&rsquo;S STORE</h2>
+                <p class="tagline">&ldquo;For Finer Foods&rdquo;</p>
+            </div>
+            <div class="address-row">
+                <div class="address">644 Washington Ave.<br>Hagerstown, MD.</div>
+                <div class="dateline" id="todayDate">194&mdash;</div>
+            </div>
+        </header>
+        <form action="/" method="POST" id="billForm">
+            <div class="meta-lines">
+                <div class="meta-line">
+                    <span class="meta-key">M</span>
+                    <input type="text" name="customer" placeholder="Customer name" autocomplete="off">
+                </div>
+                <div class="meta-line">
+                    <span class="meta-key">No.</span>
+                    <input type="text" name="clerk" placeholder="Clerk / Reg. No." autocomplete="off">
+                </div>
+            </div>
+            <div class="ledger-head">
+                <h3 class="ledger-title">Goods Purchased</h3>
+                <div class="account-fwd">Account<br>Forwarded</div>
+            </div>
+            <div class="grid-cols" aria-hidden="true">
+                <span class="col-label col-num">#</span>
+                <span class="col-label">Item</span>
+                <span class="col-label col-num">MRP</span>
+                <span class="col-label col-num">Qty</span>
+                <span class="col-label col-num">Price</span>
+                <span class="col-label col-money">Amount</span>
+                <span class="col-label"></span>
+            </div>
+            <div id="items">
+                <div class="item-row">
+                    <span class="row-no">1</span>
+                    <input class="cell-input c-name" type="text" name="item_name[]" placeholder="Item name" required>
+                    <div class="c-fields">
+                        <input class="cell-input num"   type="number" name="mrp[]"      step="0.01" placeholder="MRP" required>
+                        <input class="cell-input num"   type="number" name="quantity[]" step="0.01" placeholder="Qty" required>
+                        <input class="cell-input num"   type="number" name="price[]"    step="0.01" placeholder="Price" required>
+                        <input class="cell-input money amount-cell" type="text" value="0.00" tabindex="-1" readonly aria-label="Line amount">
+                    </div>
+                    <button type="button" class="remove-item" aria-label="Remove item">&times;</button>
+                </div>
+            </div>
+            <div class="live-total">
+                <span class="lbl">Running Total</span>
+                <span class="amt" id="liveTotal">0.00</span>
+            </div>
+            <div class="actions">
+                <button type="button" class="stamp add" onclick="addItem()">+ Add line</button>
+                <button type="submit" class="stamp primary">Generate Bill</button>
+            </div>
         </form>
-
-        <script>
-            function addItem() {
-                let itemDiv = document.createElement("div");
-                itemDiv.className = "row mb-3";
-                itemDiv.innerHTML = `
-                    <div class="col-md-3">
-                        <input type="text" class="form-control" name="item_name[]" placeholder="Item Name" required>
-                    </div>
-                    <div class="col-md-2">
-                        <input type="number" class="form-control" name="mrp[]" step="0.01" placeholder="MRP" required>
-                    </div>
-                    <div class="col-md-2">
-                        <input type="number" class="form-control" name="quantity[]" step="0.01" placeholder="Quantity" required>
-                    </div>
-                    <div class="col-md-2">
-                        <input type="number" class="form-control" name="price[]" step="0.01" placeholder="Price" required>
-                    </div>
-                    <div class="col-md-3">
-                        <button type="button" class="btn btn-danger remove-item">Remove</button>
-                    </div>
-                `;
-                document.getElementById("items").appendChild(itemDiv);
-            }
-
-            document.addEventListener("click", function(e) {
-                if (e.target.classList.contains("remove-item")) {
-                    e.target.parentElement.parentElement.remove();
-                }
-            });
-        </script>
-
         {% if bill_no %}
-        <hr>
-        <h2>Generated Bill</h2>
-        <div class="mb-3">
-            <p><strong>Bill No:</strong> {{ bill_no }} <strong>Date:</strong> {{ bill_date }} <strong>Time:</strong> {{ bill_time }}</p>
-        </div>
-
-        <table class="table table-bordered" id="billTable">
-            <thead class="table-primary">
-                <tr>
-                    <th>Item Name</th>
-                    <th>MRP</th>
-                    <th>Quantity</th>
-                    <th>Price</th>
-                    <th>Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in items %}
-                <tr>
-                    <td>{{ item.ItemName }}</td>
-                    <td>{{ item.MRP }}</td>
-                    <td>{{ item.Quantity }}</td>
-                    <td>{{ item.Price }}</td>
-                    <td>{{ item.Amount }}</td>
-                </tr>
-                {% endfor %}
-                <tr class="table-warning">
-                    <td colspan="4"><strong>Total Amount:</strong></td>
-                    <td><strong>{{ total_amount }}</strong></td>
-                </tr>
-            </tbody>
-        </table>
-
-        <button class="btn btn-info" onclick="exportToExcel()">Export to Excel</button>
-        <button class="btn btn-danger" onclick="exportToPDF()">Export to PDF</button>
-
+        <section class="receipt">
+            <span class="receipt-stamp">Receipt Issued</span>
+            <div class="receipt-meta">
+                <span>Bill No <b>{{ bill_no }}</b></span>
+                <span>Date <b>{{ bill_date }}</b></span>
+                <span>Time <b>{{ bill_time }}</b></span>
+            </div>
+            <table class="bill" id="billTable">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th class="r">MRP</th>
+                        <th class="c">Qty</th>
+                        <th class="r">Price</th>
+                        <th class="r">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.ItemName }}</td>
+                        <td class="r">{{ item.MRP }}</td>
+                        <td class="c">{{ item.Quantity }}</td>
+                        <td class="r">{{ item.Price }}</td>
+                        <td class="r">{{ item.Amount }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="total-row">
+                        <td class="label" colspan="4">Total Amount</td>
+                        <td class="value">{{ total_amount }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="actions receipt-actions">
+                <button class="stamp" onclick="exportToExcel()">Export Excel</button>
+                <button class="stamp" onclick="exportToPDF()">Export PDF</button>
+            </div>
+        </section>
         <script>
-        function exportToExcel() {
-            let billNo = "{{ bill_no }}"; // Get the bill number from Flask
-            window.location.href = `/export/excel/${billNo}`;
-        }
-
-        function exportToPDF() {
-            let billNo = "{{ bill_no }}";
-            window.location.href = `/export/pdf/${billNo}`;
-        }
-        </script> 
+            function exportToExcel() { window.location.href = `/export/excel/{{ bill_no }}`; }
+            function exportToPDF()   { window.location.href = `/export/pdf/{{ bill_no }}`; }
+        </script>
         {% endif %}
-    </div>
+        <p class="footnote">Trade at your independent store &middot; Ditto&rsquo;s Store</p>
+      </div>
+    </main>
+    <script>
+        (function () {
+            const d = new Date();
+            const months = ["Jan.","Feb.","Mar.","Apr.","May","June","July","Aug.","Sep.","Oct.","Nov.","Dec."];
+            document.getElementById("todayDate").textContent = `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+        })();
+        function renumber() {
+            document.querySelectorAll("#items .item-row .row-no").forEach((el, i) => el.textContent = i + 1);
+        }
+        function recalcRow(row) {
+            const q = parseFloat(row.querySelector('input[name="quantity[]"]').value) || 0;
+            const p = parseFloat(row.querySelector('input[name="price[]"]').value) || 0;
+            row.querySelector('.amount-cell').value = (q * p).toFixed(2);
+        }
+        function recalcTotal() {
+            let total = 0;
+            document.querySelectorAll('#items .item-row').forEach(row => {
+                recalcRow(row);
+                total += parseFloat(row.querySelector('.amount-cell').value) || 0;
+            });
+            document.getElementById("liveTotal").textContent = total.toFixed(2);
+        }
+        function rowMarkup(n) {
+            return `
+                <span class="row-no">${n}</span>
+                <input class="cell-input c-name" type="text" name="item_name[]" placeholder="Item name" required>
+                <div class="c-fields">
+                    <input class="cell-input num"   type="number" name="mrp[]"      step="0.01" placeholder="MRP" required>
+                    <input class="cell-input num"   type="number" name="quantity[]" step="0.01" placeholder="Qty" required>
+                    <input class="cell-input num"   type="number" name="price[]"    step="0.01" placeholder="Price" required>
+                    <input class="cell-input money amount-cell" type="text" value="0.00" tabindex="-1" readonly aria-label="Line amount">
+                </div>
+                <button type="button" class="remove-item" aria-label="Remove item">&times;</button>`;
+        }
+        function addItem() {
+            const wrap = document.getElementById("items");
+            const row = document.createElement("div");
+            row.className = "item-row";
+            row.innerHTML = rowMarkup(wrap.children.length + 1);
+            wrap.appendChild(row);
+            row.querySelector('.c-name').focus();
+        }
+        document.addEventListener("click", function (e) {
+            if (e.target.classList.contains("remove-item")) {
+                const rows = document.querySelectorAll("#items .item-row");
+                if (rows.length === 1) {
+                    e.target.closest(".item-row").querySelectorAll("input:not([readonly])").forEach(i => i.value = "");
+                    e.target.closest(".item-row").querySelector('.amount-cell').value = "0.00";
+                } else {
+                    e.target.closest(".item-row").remove();
+                }
+                renumber();
+                recalcTotal();
+            }
+        });
+        document.getElementById("items").addEventListener("input", function (e) {
+            if (e.target.name === "quantity[]" || e.target.name === "price[]") { recalcTotal(); }
+        });
+    </script>
 </body>
 </html>
